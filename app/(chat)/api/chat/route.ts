@@ -1,65 +1,31 @@
-import {
-  convertToModelMessages,
-  createUIMessageStream,
-  JsonToSseTransformStream,
-  smoothStream,
-  stepCountIs,
-  streamText,
-} from 'ai';
 import { auth, type UserType } from '@/app/(auth)/auth';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
-  createStreamId,
   deleteChatById,
   getChatById,
   getMessageCountByUserId,
-  getMessagesByChatId,
   saveChat,
   saveMessages,
 } from '@/lib/db/queries';
-import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
-import { createDocument } from '@/lib/ai/tools/create-document';
-import { updateDocument } from '@/lib/ai/tools/update-document';
-import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
-import { isProductionEnvironment } from '@/lib/constants';
-import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
-import { geolocation } from '@vercel/functions';
-import {
-  createResumableStreamContext,
-  type ResumableStreamContext,
-} from 'resumable-stream';
-import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
+import { createAssistantAgent } from '@/mastra/agents/assistant-agent';
+import { getTextFromMessage, generateUUID } from '@/lib/utils';
 
 export const maxDuration = 60;
 
-let globalStreamContext: ResumableStreamContext | null = null;
+// Validate and map UI model IDs to provider model IDs
+function validateAndMapModel(selectedModel: string): string {
+  const modelMap: Record<string, string> = {
+    'chat-model': 'chat-model',
+    'chat-model-reasoning': 'chat-model-reasoning',
+  };
 
-export function getStreamContext() {
-  if (!globalStreamContext) {
-    try {
-      globalStreamContext = createResumableStreamContext({
-        waitUntil: after,
-      });
-    } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
-        console.log(
-          ' > Resumable streams are disabled due to missing REDIS_URL',
-        );
-      } else {
-        console.error(error);
-      }
-    }
-  }
-
-  return globalStreamContext;
+  return modelMap[selectedModel] || 'chat-model'; // Default to chat-model if invalid
 }
 
 export async function POST(request: Request) {
@@ -121,18 +87,6 @@ export async function POST(request: Request) {
       }
     }
 
-    const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
-
-    const { longitude, latitude, city, country } = geolocation(request);
-
-    const requestHints: RequestHints = {
-      longitude,
-      latitude,
-      city,
-      country,
-    };
-
     await saveMessages({
       messages: [
         {
@@ -146,78 +100,60 @@ export async function POST(request: Request) {
       ],
     });
 
-    const streamId = generateUUID();
-    await createStreamId({ streamId, chatId: id });
+    // Validate and map the selected model
+    const modelId = validateAndMapModel(selectedChatModel);
 
-    const stream = createUIMessageStream({
-      execute: ({ writer: dataStream }) => {
-        const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
-          messages: convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(5),
-          experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
-              ? []
-              : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
+    // Create dynamic agent with user-selected model
+    const dynamicAgent = createAssistantAgent(modelId);
+
+    // Create a thread context for the conversation
+    // Using the chat ID as the thread ID for consistency with existing UI
+    const threadContext = {
+      threadId: id,
+      resourceId: session.user.id, // Group conversations by user
+    };
+
+    // Mastra Memory automatically handles message storage and title generation
+    const agentStream = await dynamicAgent.streamVNext(
+      getTextFromMessage(message),
+      {
+        format: 'aisdk',
+        memory: {
+          thread: { id: threadContext.threadId },
+          resource: threadContext.resourceId,
+        },
+        onStepFinish: async (stepOutput) => {
+          if (stepOutput.text) {
+            // Generate a unique UUID for the assistant message
+            const messageId = generateUUID();
+
+            try {
+              await saveMessages({
+                messages: [
+                  {
+                    chatId: id,
+                    id: messageId,
+                    role: 'assistant',
+                    parts: [
+                      {
+                        type: 'text',
+                        text: stepOutput.text,
+                      },
+                    ],
+                    attachments: [],
+                    createdAt: new Date(),
+                  },
                 ],
-          experimental_transform: smoothStream({ chunking: 'word' }),
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: 'stream-text',
-          },
-        });
-
-        result.consumeStream();
-
-        dataStream.merge(
-          result.toUIMessageStream({
-            sendReasoning: true,
-          }),
-        );
+              });
+            } catch (error) {
+              console.error('Error saving assistant message:', error);
+            }
+          }
+        },
       },
-      generateId: generateUUID,
-      onFinish: async ({ messages }) => {
-        await saveMessages({
-          messages: messages.map((message) => ({
-            id: message.id,
-            role: message.role,
-            parts: message.parts,
-            createdAt: new Date(),
-            attachments: [],
-            chatId: id,
-          })),
-        });
-      },
-      onError: () => {
-        return 'Oops, an error occurred!';
-      },
-    });
+    );
 
-    const streamContext = getStreamContext();
-
-    if (streamContext) {
-      return new Response(
-        await streamContext.resumableStream(streamId, () =>
-          stream.pipeThrough(new JsonToSseTransformStream()),
-        ),
-      );
-    } else {
-      return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
-    }
+    return agentStream.toUIMessageStreamResponse();
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
