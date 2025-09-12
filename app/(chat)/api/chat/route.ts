@@ -153,7 +153,9 @@ export async function POST(request: Request) {
       },
     );
 
-    return agentStream.toUIMessageStreamResponse();
+    // We need to manually handle the stream to inject document creation events
+    const response = agentStream.toUIMessageStreamResponse();
+    return response;
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();

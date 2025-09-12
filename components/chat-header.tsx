@@ -65,7 +65,7 @@ function PureChatHeader({
         asChild
       >
         <Link
-          href={`https://vercel.com/new/clone?repository-url=https://github.com/vercel/ai-chatbot&env=AUTH_SECRET&envDescription=Learn more about how to get the API Keys for the application&envLink=https://github.com/vercel/ai-chatbot/blob/main/.env.example&demo-title=AI Chatbot&demo-description=An Open-Source AI Chatbot Template Built With Next.js and the AI SDK by Vercel.&demo-url=https://chat.vercel.ai&products=[{"type":"integration","protocol":"ai","productSlug":"grok","integrationSlug":"xai"},{"type":"integration","protocol":"storage","productSlug":"neon","integrationSlug":"neon"},{"type":"integration","protocol":"storage","productSlug":"upstash-kv","integrationSlug":"upstash"},{"type":"blob"}]`}
+          href={`https://vercel.com/new/clone?repository-url=https://github.com/hasanloo/ai-chatbot-mastra&env=AUTH_SECRET,POSTGRES_URL,GOOGLE_GENERATIVE_AI_API_KEY&envDescription=Learn more about how to get the API Keys for the application&envLink=https://github.com/hasanloo/ai-chatbot-mastra/blob/main/.env.example&demo-title=AI Chatbot with Mastra&demo-description=AI Chatbot with Mastra is a free, open-source template built with Next.js, AI SDK and Mastra that helps you quickly build powerful chatbot applications with contextual memory, and multi-tool capabilities.&demo-url=https://ai-chatbot-mastra.vercel.app/&products=[{"type":"integration","integrationSlug":"neon","productSlug":"neon","protocol":"storage"}]`}
           target="_noblank"
         >
           <VercelIcon size={16} />

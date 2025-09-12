@@ -61,6 +61,34 @@ const sharedMemory = new Memory({
       topK: 3, // Retrieve top 3 most relevant messages
       messageRange: 2, // Include 2 messages before/after each relevant match
     },
+    workingMemory: {
+      enabled: true,
+      scope: 'resource',
+      template: `
+# User Profile
+ 
+## Personal Info
+ 
+- Name:
+- Location:
+- Timezone:
+ 
+## Preferences
+ 
+- Communication Style: [e.g., Formal, Casual]
+- Project Goal:
+- Key Deadlines:
+  - [Deadline 1]: [Date]
+  - [Deadline 2]: [Date]
+ 
+## Session State
+ 
+- Last Task Discussed:
+- Open Questions:
+  - [Question 1]
+  - [Question 2]
+`,
+    },
   },
 });
 
@@ -79,7 +107,9 @@ export function createAssistantAgent(modelId: string): Agent {
     name: 'Assistant Agent',
     instructions: ASSISTANT_INSTRUCTIONS,
     model: myProvider.languageModel(modelId),
-    tools: { weatherTool },
+    tools: {
+      weatherTool,
+    },
     memory: sharedMemory, // Use singleton memory instance
   });
 
