@@ -24,6 +24,7 @@ export function PureMessageActions({
   const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
 
+
   if (isLoading) return null;
   if (message.role === 'user') return null;
 

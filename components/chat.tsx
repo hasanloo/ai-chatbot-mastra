@@ -69,7 +69,41 @@ export function Chat({
       onData: (dataPart) => {
         setDataStream((ds) => (ds ? [...ds, dataPart] : []));
       },
-      onFinish: () => {
+      onFinish: async (finishResult) => {
+        // After streaming completes, sync the message ID with the database
+        if (finishResult?.message?.role === 'assistant') {
+          try {
+            // Fetch the latest messages to get the actual database ID
+            const response = await fetch(`/api/chat/${id}/messages`);
+            if (response.ok) {
+              const dbMessages = await response.json();
+              const latestAssistantMessage = dbMessages
+                .filter((msg: any) => msg.role === 'assistant')
+                .sort(
+                  (a: any, b: any) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime(),
+                )[0];
+
+              if (
+                latestAssistantMessage &&
+                latestAssistantMessage.id !== finishResult.message.id
+              ) {
+                // Update the message ID to match the database
+                setMessages((messages) =>
+                  messages.map((msg) =>
+                    msg.id === finishResult.message.id &&
+                    msg.role === 'assistant'
+                      ? { ...msg, id: latestAssistantMessage.id }
+                      : msg,
+                  ),
+                );
+              }
+            }
+          } catch (error) {
+            console.error('Failed to sync message ID:', error);
+          }
+        }
         mutate(unstable_serialize(getChatHistoryPaginationKey));
       },
       onError: (error) => {

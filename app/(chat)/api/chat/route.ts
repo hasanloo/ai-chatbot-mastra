@@ -113,6 +113,9 @@ export async function POST(request: Request) {
       resourceId: session.user.id, // Group conversations by user
     };
 
+    // Generate a unique UUID for the assistant message
+    const messageId = generateUUID();
+
     // Mastra Memory automatically handles message storage and title generation
     const agentStream = await dynamicAgent.streamVNext(
       getTextFromMessage(message),
@@ -124,9 +127,6 @@ export async function POST(request: Request) {
         },
         onStepFinish: async (stepOutput) => {
           if (stepOutput.text) {
-            // Generate a unique UUID for the assistant message
-            const messageId = generateUUID();
-
             try {
               await saveMessages({
                 messages: [
