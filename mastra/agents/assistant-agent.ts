@@ -1,7 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { PostgresStore, PgVector } from '@mastra/pg';
-import { fastembed } from '@mastra/fastembed';
+import { google } from '@ai-sdk/google';
 import { weatherTool } from '../tools/weather-tool';
 import { myProvider } from '@/lib/ai/providers';
 
@@ -54,7 +54,7 @@ const pgVector = new PgVector({
 const sharedMemory = new Memory({
   storage: postgresStore,
   vector: pgVector,
-  embedder: fastembed,
+  embedder: google.textEmbedding('text-embedding-004'),
   options: {
     lastMessages: 10, // Consider last 10 messages for context
     semanticRecall: {
