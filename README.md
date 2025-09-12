@@ -49,7 +49,7 @@ This application uses [Mastra](https://mastra.ai), a powerful framework for buil
 
 ### Memory System
 - **PostgreSQL Storage**: Uses `@mastra/pg` for persistent memory storage
-- **Vector Embeddings**: `@mastra/fastembed` for semantic similarity and context retrieval
+- **Vector Embeddings**: `google/text-embedding-004` for semantic similarity and context retrieval
 - **Working Memory**: Template-based user profile tracking with session state management
 - **Semantic Recall**: Retrieves the most relevant previous conversations (top 3 with 2 message range)
 
