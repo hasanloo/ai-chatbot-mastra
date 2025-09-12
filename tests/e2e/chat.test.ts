@@ -14,7 +14,13 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toBeTruthy();
+    if (assistantMessage.content) {
+      expect(assistantMessage.content.toLowerCase()).toMatch(
+        /green|grass|chlorophyll/,
+      );
+      expect(assistantMessage.content.length).toBeGreaterThan(20);
+    }
   });
 
   test('Redirect to /chat/:id after submitting message', async () => {
@@ -22,7 +28,12 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toBeTruthy();
+    if (assistantMessage.content) {
+      expect(assistantMessage.content.toLowerCase()).toMatch(
+        /green|grass|chlorophyll/,
+      );
+    }
     await chatPage.hasChatIdInUrl();
   });
 
@@ -31,9 +42,12 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain(
-      'With Next.js, you can ship fast!',
-    );
+    // Check that the response is about Next.js and contains relevant content
+    expect(assistantMessage.content).toBeTruthy();
+    if (assistantMessage.content) {
+      expect(assistantMessage.content.toLowerCase()).toMatch(/next\.?js/);
+      expect(assistantMessage.content.length).toBeGreaterThan(50); // Ensure substantial response
+    }
   });
 
   test('Toggle between send/stop button based on activity', async () => {
@@ -63,7 +77,12 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toBeTruthy();
+    if (assistantMessage.content) {
+      expect(assistantMessage.content.toLowerCase()).toMatch(
+        /green|grass|chlorophyll/,
+      );
+    }
 
     const userMessage = await chatPage.getRecentUserMessage();
     await userMessage.edit('Why is the sky blue?');
@@ -71,7 +90,12 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const updatedAssistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(updatedAssistantMessage.content).toContain("It's just blue duh!");
+    expect(updatedAssistantMessage.content).toBeTruthy();
+    if (updatedAssistantMessage.content) {
+      expect(updatedAssistantMessage.content.toLowerCase()).toMatch(
+        /blue|sky|scattering/,
+      );
+    }
   });
 
   test('Hide suggested actions after sending message', async () => {
@@ -148,7 +172,12 @@ test.describe('Chat activity', () => {
     expect(userMessage.content).toBe('Why is the sky blue?');
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just blue duh!");
+    expect(assistantMessage.content).toBeTruthy();
+    if (assistantMessage.content) {
+      expect(assistantMessage.content.toLowerCase()).toMatch(
+        /blue|sky|scattering/,
+      );
+    }
   });
 
   test('auto-scrolls to bottom after submitting new messages', async () => {

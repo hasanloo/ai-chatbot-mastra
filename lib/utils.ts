@@ -71,7 +71,6 @@ export function getMostRecentUserMessage(messages: Array<UIMessage>) {
   return userMessages.at(-1);
 }
 
-
 export function getTrailingMessageId({
   messages,
 }: {

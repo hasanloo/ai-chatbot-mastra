@@ -102,7 +102,6 @@ export const vote = pgTable(
 
 export type Vote = InferSelectModel<typeof vote>;
 
-
 export const stream = pgTable(
   'Stream',
   {

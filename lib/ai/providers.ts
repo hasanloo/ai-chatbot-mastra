@@ -4,12 +4,7 @@ import {
   wrapLanguageModel,
 } from 'ai';
 import { google } from '@ai-sdk/google';
-import {
-  artifactModel,
-  chatModel,
-  reasoningModel,
-  titleModel,
-} from './models.test';
+import { chatModel, reasoningModel, titleModel } from './models.test';
 import { isTestEnvironment } from '../constants';
 
 export const myProvider = isTestEnvironment
@@ -18,7 +13,6 @@ export const myProvider = isTestEnvironment
         'chat-model': chatModel,
         'chat-model-reasoning': reasoningModel,
         'title-model': titleModel,
-        'artifact-model': artifactModel,
       },
     })
   : customProvider({
@@ -29,6 +23,5 @@ export const myProvider = isTestEnvironment
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
         'title-model': google('gemini-2.5-flash-lite'),
-        'artifact-model': google('gemini-2.5-mini'),
       },
     });

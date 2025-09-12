@@ -194,7 +194,6 @@ const PurePreviewMessage = ({
                   </Tool>
                 );
               }
-
             })}
 
             {!isReadonly && (
