@@ -47,7 +47,53 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+### Code Quality Standards (Principle I)
+- [ ] ESLint/Biome configuration present
+- [ ] TypeScript strict mode enabled
+- [ ] Path aliases configured for imports
+- [ ] Drizzle ORM used for all database access
+
+### Testing Standards (Principle II - NON-NEGOTIABLE)
+- [ ] TDD workflow planned: Tests written before implementation
+- [ ] Contract tests identified for all API endpoints
+- [ ] Integration tests identified for user-facing features
+- [ ] Playwright E2E tests planned for critical journeys
+- [ ] Test coverage target ≥80% for critical paths
+
+### UX Consistency (Principle III)
+- [ ] shadcn/ui components used exclusively
+- [ ] Tailwind CSS for all styling
+- [ ] Loading states designed for async operations
+- [ ] Error messages are user-friendly
+- [ ] WCAG 2.1 AA accessibility standards met
+- [ ] Responsive design supports mobile/tablet/desktop
+- [ ] Dark mode support via next-themes
+
+### Performance Requirements (Principle IV)
+- [ ] TTFB target <200ms for API routes
+- [ ] FCP target <1.8s on 3G
+- [ ] TTI target <3.5s on 3G
+- [ ] AI streaming first token <1s
+- [ ] Database queries <100ms p95
+- [ ] Bundle size <300KB initial payload
+- [ ] Server Components used by default
+- [ ] Mastra agent singleton pattern enforced
+
+### Security & Data Integrity (Principle V)
+- [ ] NextAuth.js v5 for authentication
+- [ ] bcrypt password hashing (≥10 rounds)
+- [ ] Zod schema validation for API routes
+- [ ] Environment variables not exposed to client
+- [ ] Chat visibility settings respected
+- [ ] Database migrations are reversible
+
+### Maintainability & Documentation (Principle VI)
+- [ ] Complex logic documented with rationale
+- [ ] Public APIs have JSDoc comments
+- [ ] Database schema changes versioned
+- [ ] Environment variables documented in .env.example
+- [ ] CLAUDE.md updated if architecture changes
+- [ ] New dependencies justified
 
 ## Project Structure
 
@@ -216,4 +262,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
