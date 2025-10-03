@@ -109,48 +109,79 @@ function computeF1TokenOverlap(prediction: string, goldAnswer: string): number {
 
 **Dependencies**: None (custom implementation)
 
-### 4. Response Mocking Strategy for Next.js Route Handlers
+### 4. LLM Provider Mocking Strategy for Mastra Agents
 
-**Decision**: Use dependency injection with a ChatService abstraction layer
+**Decision**: Use provider-level mocking with MockLanguageModelV2 from AI SDK
 
 **Rationale**:
-The spec requires mocking assistant responses from the dataset for all non-evaluation turns, but allowing the real assistant pipeline to generate responses at evaluation questions. This requires intercepting the chat API logic.
+The spec requires mocking assistant responses from the dataset for all non-evaluation turns, but allowing the real assistant pipeline to generate responses at evaluation questions. **CRITICAL**: Mocking must not bypass Mastra's agent or memory system - only the LLM provider should be mocked. This ensures Mastra's memory system creates and maintains conversation context during haystack replay.
 
 **Approach**:
 ```typescript
 // lib/eval/chat-service.ts
+import { MockLanguageModelV2 } from 'ai/test';
+import { customProvider } from '@/lib/ai/providers';
+import { Mastra } from '@mastra/core';
+
 interface ChatService {
-  generateResponse(message: string, chatId: string): Promise<string>;
+  generateResponse(messages: ChatMessage[], chatId: string): Promise<string>;
 }
 
 class ProductionChatService implements ChatService {
-  async generateResponse(message: string, chatId: string): Promise<string> {
-    // Existing Mastra agent invocation logic
-    return await mastra.agents.assistantAgent.generate(message, { chatId });
+  async generateResponse(messages: ChatMessage[], chatId: string): Promise<string> {
+    // Call Mastra agent directly with real Gemini provider
+    return await mastra.agents.assistantAgent.generate({ messages, chatId });
   }
 }
 
 class MockedChatService implements ChatService {
-  constructor(private mockResponses: Map<number, string>) {}
+  private mockedMastra: Mastra;
 
-  async generateResponse(message: string, chatId: string): Promise<string> {
-    const turnIndex = this.getTurnIndex(chatId);
-    return this.mockResponses.get(turnIndex) ??
-      throw new Error('No mock response for turn');
+  constructor(mockResponses: Map<number, string>) {
+    // Create mock provider that returns dataset responses
+    const mockProvider = customProvider({
+      languageModels: {
+        'chat-model': new MockLanguageModelV2({
+          doGenerate: async () => ({
+            text: mockResponses.get(currentTurnIndex),
+            finishReason: 'stop',
+            usage: { promptTokens: 10, completionTokens: 20 },
+          }),
+        }),
+      },
+    });
+
+    // Create Mastra instance with mocked provider
+    // Same configuration as production, just different LLM provider
+    this.mockedMastra = new Mastra({
+      agents: {
+        assistantAgent: {
+          model: mockProvider.languageModel('chat-model'),
+          // Same memory config as production
+        },
+      },
+    });
+  }
+
+  async generateResponse(messages: ChatMessage[], chatId: string): Promise<string> {
+    // STILL calls Mastra agent - just with mocked LLM provider
+    // This ensures memory is created and maintained normally
+    return await this.mockedMastra.agents.assistantAgent.generate({ messages, chatId });
   }
 }
-
-// Evaluation runner uses MockedChatService for haystack replay
-// then switches to ProductionChatService for the eval question
 ```
 
+**Key Difference from Initial Approach**:
+- ❌ OLD: MockedChatService returns strings directly → No Mastra call → No memory created
+- ✅ NEW: MockedChatService calls Mastra with mock provider → Memory works normally
+
 **Alternatives Considered**:
+- **Returning mock strings without calling Mastra**: Rejected as it prevents memory creation (falsifies evaluation)
 - **Global mocking with jest/sinon**: Rejected as this is runtime code, not test code
-- **Middleware interception**: Rejected as Next.js route handler middleware is complex to inject
-- **Environment-based switching**: Rejected as too coarse-grained and error-prone
+- **Middleware interception**: Rejected as Next.js route handler is not used (direct Mastra calls)
 - **Monkey-patching Mastra agent**: Rejected as violates spec requirement to not modify Mastra core
 
-**Dependencies**: None (custom abstraction)
+**Dependencies**: MockLanguageModelV2 from `ai/test` (already used in codebase at `lib/ai/models.test.ts`)
 
 ### 5. Deterministic Seeding for Mastra Agents
 
@@ -232,14 +263,15 @@ pnpm run eval:longmemeval data/longmemeval_m.json 42 ./results
 
 ### 7. Conversation Replay Patterns
 
-**Decision**: Direct HTTP client invocation of POST /api/chat with manual state management
+**Decision**: Direct Mastra agent invocation with ChatService abstraction for mocking control
 
 **Rationale**:
 Replaying conversations requires:
 1. Creating a unique Chat entity in the database for each LongMemEval question
-2. Sequentially sending user messages via POST /api/chat
-3. Capturing and storing assistant responses (mocked or real)
-4. Maintaining conversation state across session boundaries
+2. Sequentially processing conversation turns (both user and assistant)
+3. Mocking LLM responses during haystack replay (using provider-level mocking)
+4. Capturing real LLM responses at evaluation questions
+5. Maintaining conversation state across session boundaries
 
 **Approach**:
 ```typescript
@@ -248,28 +280,29 @@ async function replayConversation(
   question: LongMemEvalQuestion,
   chatService: ChatService
 ): Promise<EvaluationResult> {
-  // 1. Create unique Chat entity for this evaluation
+  // 1. Create unique Chat entity directly via Drizzle ORM
   const chatId = await createEvalChat(question.question_id);
 
-  // 2. Replay haystack sessions with mocked responses
+  // 2. Replay haystack sessions with mocked LLM provider
   const mockResponses = extractMockResponses(question.haystack_sessions);
   const mockedService = new MockedChatService(mockResponses);
 
+  const conversationHistory: ChatMessage[] = [];
   for (const session of question.haystack_sessions) {
     for (const turn of session) {
       if (turn.role === 'user') {
-        await mockedService.generateResponse(turn.content, chatId);
+        conversationHistory.push({ role: 'user', content: turn.content });
+        // Call Mastra with mocked LLM provider
+        const response = await mockedService.generateResponse(conversationHistory, chatId);
+        conversationHistory.push({ role: 'assistant', content: response });
       }
-      // Assistant turns are already in mockResponses
     }
   }
 
   // 3. Ask the evaluation question with real agent
+  conversationHistory.push({ role: 'user', content: question.question });
   const realService = new ProductionChatService();
-  const modelAnswer = await realService.generateResponse(
-    question.question,
-    chatId
-  );
+  const modelAnswer = await realService.generateResponse(conversationHistory, chatId);
 
   // 4. Score the answer
   const score = computeF1TokenOverlap(modelAnswer, question.answer);
@@ -286,17 +319,18 @@ async function replayConversation(
 ```
 
 **State Management**:
-- Each LongMemEval question gets a unique Chat entity in the database
-- Chat entity ID is passed through all message exchanges to maintain context
+- Each LongMemEval question gets a unique Chat entity in the database (via Drizzle ORM)
+- Chat entity ID is passed through all Mastra agent calls to maintain context
 - Mastra's PostgresStore automatically persists memory across turns
 - Session boundaries in the dataset are informational only; Mastra maintains continuous context
+- **No HTTP layer involved** - All operations are direct function calls
 
 **Alternatives Considered**:
-- **Browser automation (Playwright)**: Rejected as adds complexity and requires UI when API is sufficient
+- **HTTP calls to POST /api/chat**: Rejected due to complexity (server must be running, authentication, port configuration)
+- **Browser automation (Playwright)**: Rejected as adds complexity and requires UI when direct calls are simpler
 - **In-memory chat state**: Rejected as violates constraint to use production database
-- **Direct Mastra API calls bypassing /api/chat**: Rejected as doesn't test the real production endpoint
 
-**Dependencies**: node-fetch or native fetch for HTTP requests to /api/chat
+**Dependencies**: None (uses existing Drizzle ORM for database access and Mastra for agent invocation)
 
 ## Summary of Key Decisions
 
@@ -305,10 +339,10 @@ async function replayConversation(
 | Dataset Format | LongMemEval JSON from GitHub | Official ICLR 2025 benchmark, 500 eval instances |
 | Eval Question Identification | Top-level question entries, not turn flags | Dataset structure uses question_id, not per-turn markers |
 | F1 Scoring | Custom implementation with whitespace tokenization | Simple algorithm, no external dependencies needed |
-| Response Mocking | Dependency injection with ChatService abstraction | Clean, testable, doesn't modify Mastra core |
+| LLM Provider Mocking | Provider-level mocking with MockLanguageModelV2 | Preserves Mastra memory creation, mocks only LLM provider |
 | Deterministic Seeding | Model seed parameter via Mastra/AI SDK | Supported by OpenAI models (beta), fallback: document non-determinism |
 | CLI Framework | Native Node.js process.argv | No complex parsing needed, zero dependencies |
-| Conversation Replay | Direct /api/chat invocation with DB state | Tests real production endpoint, leverages Mastra PostgresStore |
+| Conversation Replay | Direct Mastra agent calls with ChatService abstraction | No HTTP layer, direct function calls, leverages Mastra PostgresStore |
 
 ## Dependencies to Add
 
@@ -320,15 +354,11 @@ None required. All functionality can be implemented with existing dependencies:
 
 ```env
 # .env.example additions
-# LongMemEval dataset path (optional, defaults to data/longmemeval_s.json)
-LONGMEMEVAL_DATASET_PATH=data/longmemeval_s.json
-
-# Seed for deterministic LLM generation (optional, leave empty for non-deterministic)
-LONGMEMEVAL_SEED=42
-
 # Output directory for evaluation results (optional, defaults to current directory)
 LONGMEMEVAL_OUTPUT_DIR=./eval-results
 ```
+
+**Note**: Removed `LONGMEMEVAL_DATASET_PATH` (now specified via CLI `--dataset` flag) and `LONGMEMEVAL_SEED` (Gemini 2.5 Flash/Pro models don't support deterministic seed)
 
 ## Next Steps
 

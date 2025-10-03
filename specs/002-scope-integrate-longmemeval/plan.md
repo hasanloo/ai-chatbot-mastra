@@ -121,13 +121,12 @@ lib/
 │   └── migrations/                # Drizzle migrations (if schema changes)
 ├── ai/
 │   ├── models.ts                  # Existing AI models
-│   └── providers.ts               # Existing providers
+│   └── providers.ts               # Existing providers (customProvider pattern)
 └── eval/                          # NEW: LongMemEval integration
     ├── dataset-loader.ts          # Load and parse LongMemEval JSON
-    ├── conversation-replayer.ts   # Replay conversations via /api/chat
+    ├── conversation-replayer.ts   # Replay conversations via direct Mastra calls
     ├── scoring.ts                 # F1 token overlap computation
-    ├── mock-interceptor.ts        # Mock layer for dataset responses
-    └── cli-runner.ts              # CLI entry point
+    └── chat-service.ts            # ChatService abstraction with provider-level mocking
 
 mastra/
 ├── index.ts                       # Existing Mastra setup (PostgresStore)
@@ -159,14 +158,14 @@ tests/
    - LongMemEval dataset format and structure (JSON schema, fields, conversation format)
    - LongMemEval dataset source and download method (GitHub, paper supplementary materials)
    - F1 token overlap computation method (algorithm, existing libraries)
-   - Response mocking strategy for Next.js route handlers (middleware, HOC, dependency injection)
+   - LLM provider mocking strategy for Mastra agents (MockLanguageModelV2, provider-level mocking)
    - Deterministic seeding approach for Mastra agents (if randomization exists)
    - CLI framework for TypeScript/Node.js (minimist, commander, yargs, or native)
 
 2. **Generate and dispatch research tasks**:
    - Task 1: Research LongMemEval dataset format (explore paper, GitHub repo, sample conversations)
    - Task 2: Research F1 token overlap scoring algorithms (NLP best practices, existing npm packages)
-   - Task 3: Research response mocking patterns in Next.js route handlers (DI, middleware, test doubles)
+   - Task 3: Research LLM provider mocking patterns for Mastra (MockLanguageModelV2, AI SDK test utilities)
    - Task 4: Research Mastra agent deterministic behavior (seed configuration, randomization control)
    - Task 5: Research TypeScript CLI frameworks (compare options, select lightweight solution)
    - Task 6: Research conversation replay patterns (preserving state, session management)
@@ -267,7 +266,7 @@ No violations detected. All constitutional requirements are satisfied:
 - [x] Phase 0: Research complete (/plan command)
 - [x] Phase 1: Design complete (/plan command)
 - [x] Phase 2: Task planning complete (/plan command - describe approach only)
-- [ ] Phase 3: Tasks generated (/tasks command)
+- [x] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 

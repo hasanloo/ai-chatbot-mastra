@@ -159,7 +159,13 @@ export interface ProductionChatService extends ChatService {
 }
 
 /**
- * Mocked chat service (returns pre-defined responses from dataset)
+ * Mocked chat service (uses provider-level mocking to return dataset responses)
+ *
+ * IMPORTANT: This service STILL calls Mastra's agent - it just uses a mocked LLM provider
+ * underneath. This ensures Mastra's memory system works normally during haystack replay.
+ *
+ * Implementation uses MockLanguageModelV2 from AI SDK to mock only the LLM provider,
+ * not the Mastra agent itself.
  */
 export interface MockedChatService extends ChatService {
   /**
@@ -171,7 +177,8 @@ export interface MockedChatService extends ChatService {
   setMockResponse(turnIndex: number, response: string): void;
 
   /**
-   * Generate mocked response based on turn index.
+   * Generate mocked response by calling Mastra agent with mocked LLM provider.
+   * The provider returns the pre-defined dataset response for the current turn.
    * Throws if no mock response is set for the current turn.
    */
   generateResponse(message: string, chatId: string): Promise<string>;
