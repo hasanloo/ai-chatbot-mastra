@@ -34,7 +34,9 @@ function parseArgs() {
       case '-d': {
         const dataset = args[++i];
         if (!['s', 'm', 'oracle'].includes(dataset)) {
-          console.error(`Invalid dataset: ${dataset}. Must be 's', 'm', or 'oracle'`);
+          console.error(
+            `Invalid dataset: ${dataset}. Must be 's', 'm', or 'oracle'`,
+          );
           process.exit(1);
         }
         parsed.dataset = dataset as 's' | 'm' | 'oracle';
@@ -92,6 +94,7 @@ Examples:
 Notes:
   - Dataset files must be downloaded first to data/ directory
   - Results are saved as timestamped JSON: longmemeval-results-YYYYMMDD-HHMMSS.json
+  - Uses GPT-5-mini as LLM-as-judge for scoring (requires OPENAI_API_KEY)
   - Gemini models do not support deterministic seed (results may vary between runs)
   `);
   process.exit(0);
@@ -123,18 +126,25 @@ runner
     onProgress: (progress) => {
       if (progress.currentQuestion) {
         console.log(
-          `[${progress.completedQuestions + 1}/${progress.totalQuestions}] Question ID: ${progress.currentQuestion.questionId}`
+          `[${progress.completedQuestions + 1}/${progress.totalQuestions}] Question ID: ${progress.currentQuestion.questionId}`,
         );
       }
     },
   })
   .then((result) => {
     console.log('\n[LongMemEval] Evaluation complete!');
-    console.log(`[LongMemEval] Total questions: ${result.metadata.total_questions}`);
-    console.log(`[LongMemEval] Completed: ${result.metadata.completed_questions}`);
+    console.log(
+      `[LongMemEval] Total questions: ${result.metadata.total_questions}`,
+    );
+    console.log(
+      `[LongMemEval] Completed: ${result.metadata.completed_questions}`,
+    );
     console.log(`[LongMemEval] Failed: ${result.metadata.failed_questions}`);
     console.log(
-      `[LongMemEval] Average F1 Score: ${result.metadata.average_f1_score.toFixed(4)}`
+      `[LongMemEval] Accuracy: ${(result.metadata.accuracy * 100).toFixed(2)}%`,
+    );
+    console.log(
+      `[LongMemEval] Average Score: ${result.metadata.average_score.toFixed(4)}`,
     );
     console.log(`[LongMemEval] Output written to: ${result.outputFilePath}`);
     process.exit(0);

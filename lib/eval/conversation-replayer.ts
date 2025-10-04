@@ -15,7 +15,7 @@ import {
 } from '@/specs/002-scope-integrate-longmemeval/contracts/conversation-replayer.contract';
 import type { LongMemEvalQuestion } from '@/specs/002-scope-integrate-longmemeval/contracts/dataset-loader.contract';
 import { generateChatResponse } from './chat-service';
-import { createF1Scorer } from './scoring';
+import { createLLMJudgeScorer } from './llm-judge-scorer';
 
 /**
  * Implementation of conversation replayer
@@ -97,14 +97,23 @@ export class LongMemEvalConversationReplayer implements ConversationReplayer {
         // No expectedResponse - uses real model
       );
 
-      // Compute F1 score
-      const scorer = createF1Scorer();
-      const f1Score = scorer.computeF1(modelAnswer, question.answer);
+      // Evaluate with LLM judge
+      const scorer = createLLMJudgeScorer();
+      const judgeResult = await scorer.evaluateAnswer(
+        question.question,
+        question.answer,
+        modelAnswer,
+      );
 
       if (effectiveConfig.verbose) {
         console.log(`[Replayer] Model Answer: ${modelAnswer}`);
         console.log(`[Replayer] Gold Answer: ${question.answer}`);
-        console.log(`[Replayer] F1 Score: ${f1Score.toFixed(4)}`);
+        console.log(
+          `[Replayer] LLM Judge Score: ${judgeResult.score} (${judgeResult.verdict})`,
+        );
+        if (judgeResult.reasoning) {
+          console.log(`[Replayer] Judge Reasoning: ${judgeResult.reasoning}`);
+        }
       }
 
       return {
@@ -113,7 +122,8 @@ export class LongMemEvalConversationReplayer implements ConversationReplayer {
         question: question.question,
         goldAnswer: question.answer,
         modelAnswer,
-        f1Score,
+        score: judgeResult.score,
+        judgeResult,
         chatId: resourceId,
         evaluatedAt: new Date(),
       };

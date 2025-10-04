@@ -97,13 +97,14 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
             question: result.question,
             answer: result.goldAnswer,
             model_answer: result.modelAnswer,
-            score: result.f1Score,
+            score: result.score,
+            reasoning: result.judgeResult?.reasoning,
           });
 
           // Update progress
           this.updateProgress({
             completedQuestions: this.progress.completedQuestions + 1,
-            currentAverageF1: this.computeAverageF1(results),
+            currentAverageScore: this.computeAverageScore(results),
           });
         } catch (error) {
           // Log error and continue (resilient mode)
@@ -135,8 +136,8 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
       // Ensure output directory exists
       await fs.mkdir(outputDir, { recursive: true });
 
-      // Compute final average F1
-      const averageF1Score = this.computeAverageF1(results);
+      // Compute final average score (accuracy)
+      const averageScore = this.computeAverageScore(results);
 
       const outputData = {
         metadata: {
@@ -145,7 +146,8 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
           total_questions: questionsToEvaluate.length,
           completed_questions: results.length,
           failed_questions: errors.length,
-          average_f1_score: averageF1Score,
+          average_score: averageScore,
+          accuracy: averageScore, // Binary score average = accuracy
           seed: config.seed,
           started_at: startedAt,
           completed_at: completedAt,
@@ -197,9 +199,9 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
   }
 
   /**
-   * Compute average F1 score from results
+   * Compute average score (accuracy) from results
    */
-  private computeAverageF1(results: Array<{ score: number }>): number {
+  private computeAverageScore(results: Array<{ score: number }>): number {
     if (results.length === 0) {
       return 0;
     }

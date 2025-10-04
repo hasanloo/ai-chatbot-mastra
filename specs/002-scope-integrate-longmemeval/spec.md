@@ -86,7 +86,7 @@ When creating this spec from a user prompt:
 ## Clarifications
 
 ### Session 2025-10-02
-- Q: Which scoring method(s) should be used to evaluate assistant answers against gold answers? → A: F1 token overlap only
+- Q: Which scoring method(s) should be used to evaluate assistant answers against gold answers? → A: LLM-as-judge using gpt-4o-mini (following official LongMemEval methodology with >97% human agreement)
 - Q: When an error occurs during dataset loading, conversation replay, or evaluation, should the system continue processing remaining conversations/questions or stop entirely? → A: Continue processing, skip failed item, log error (resilient)
 - Q: What is the acceptable maximum runtime for processing the entire LongMemEval dataset? → A: No strict limit (optimize for accuracy over speed)
 - Q: How are evaluation questions distinguished from regular conversation turns in the LongMemEval dataset? → A: Special field/flag in turn object (e.g., `"is_eval": true`)
@@ -143,8 +143,8 @@ As a chatbot system developer or researcher, I need to evaluate how well the mem
 **Evaluation & Scoring**
 - **FR-011**: System MUST capture the assistant's generated answer when an evaluation question is processed
 - **FR-012**: System MUST compare the generated answer with the gold answer from the dataset
-- **FR-013**: System MUST compute a similarity score using F1 token overlap between the generated answer and gold answer
-- **FR-014**: System MUST record evaluation results in structured JSON format containing: question_id, question_type, question, answer (gold), model_answer, and score
+- **FR-013**: System MUST evaluate answer correctness using an LLM-as-judge (gpt-4o-mini) following the official LongMemEval evaluation prompt: "I will give you a question, a correct answer, and a response from a model. Please answer yes if the response contains the correct answer. Otherwise, answer no. If the response is equivalent to the correct answer or contains all the intermediate steps to get the correct answer, you should also answer yes."
+- **FR-014**: System MUST record evaluation results in structured JSON format containing: question_id, question_type, question, answer (gold), model_answer, score (0 or 1), and reasoning from the judge
 - **FR-015**: System MUST aggregate results across all evaluation questions in a conversation
 
 **Reproducibility & Execution**

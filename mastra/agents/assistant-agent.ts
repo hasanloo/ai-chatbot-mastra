@@ -64,7 +64,7 @@ const sharedMemory = new Memory({
     },
     workingMemory: {
       enabled: true,
-      scope: 'resource',
+      version: 'vnext',
       template: `
 # User Profile
 

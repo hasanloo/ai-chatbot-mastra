@@ -16,11 +16,16 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
+    "db:local:up": "bash scripts/db-local-start.sh",
+    "db:local:down": "bash scripts/db-local-stop.sh",
+    "db:local:reset": "bash scripts/db-local-reset.sh",
+    "dev:local": "pnpm db:local:up && pnpm dev",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
-    "eval:longmemeval": "tsx --env-file=.env.local --env-file=.env scripts/eval-longmemeval.ts"
+    "eval:longmemeval": "tsx --env-file=.env.local scripts/eval-longmemeval.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.13",
+    "@ai-sdk/openai": "^2.0.42",
     "@ai-sdk/provider": "2.0.0",
     "@ai-sdk/react": "2.0.26",
     "@icons-pack/react-simple-icons": "^13.7.0",

@@ -7,7 +7,7 @@
  */
 
 import type { LongMemEvalQuestion } from './dataset-loader.contract';
-import type { DetailedF1Score } from './scoring.contract';
+import type { LLMJudgeResult } from './llm-judge-scorer.contract';
 
 /**
  * Conversation replayer interface
@@ -106,11 +106,11 @@ export interface EvaluationResult {
   /** Model-generated answer */
   modelAnswer: string;
 
-  /** F1 token overlap score (0-1) */
-  f1Score: number;
+  /** Binary correctness score from LLM judge (0 or 1) */
+  score: number;
 
-  /** Detailed scoring breakdown (optional) */
-  detailedScore?: DetailedF1Score;
+  /** Detailed result from LLM judge (optional) */
+  judgeResult?: LLMJudgeResult;
 
   /** Chat ID created for this evaluation */
   chatId: string;

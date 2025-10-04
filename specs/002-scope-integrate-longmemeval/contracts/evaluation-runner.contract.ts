@@ -88,8 +88,11 @@ export interface EvaluationMetadata {
   /** Failed evaluations */
   failed_questions: number;
 
-  /** Mean F1 score across all completed questions */
-  average_f1_score: number;
+  /** Mean score (accuracy) across all completed questions */
+  average_score: number;
+
+  /** Accuracy (same as average_score for binary scoring) */
+  accuracy: number;
 
   /** Seed used for deterministic generation (if any) */
   seed?: number;
@@ -123,8 +126,11 @@ export interface EvaluationResultOutput {
   /** Model-generated answer */
   model_answer: string;
 
-  /** F1 token overlap score (0-1) */
+  /** Binary correctness score from LLM judge (0 or 1) */
   score: number;
+
+  /** Optional: reasoning from LLM judge */
+  reasoning?: string;
 }
 
 /**
@@ -163,8 +169,8 @@ export interface EvaluationProgress {
     index: number; // 0-based index in dataset
   };
 
-  /** Running average F1 score (updated after each completion) */
-  currentAverageF1?: number;
+  /** Running average score/accuracy (updated after each completion) */
+  currentAverageScore?: number;
 
   /** Estimated time remaining in milliseconds (if available) */
   estimatedTimeRemainingMs?: number;

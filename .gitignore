@@ -49,3 +49,9 @@ s-results-*.json
 data/longmemeval_m.json
 data/longmemeval_s.json
 data/longmemeval_oracle.json
+
+# Local Docker volumes
+docker/postgres-data/
+docker/pgadmin-data/
+
+.env.local.cloud
