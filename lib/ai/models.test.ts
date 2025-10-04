@@ -64,3 +64,36 @@ export const titleModel = new MockLanguageModelV2({
     rawCall: { rawPrompt: null, rawSettings: {} },
   }),
 });
+
+/**
+ * Factory to create eval mock model with specific response
+ * Used for LongMemEval evaluation to mock assistant responses during haystack replay
+ */
+export function createEvalMockModel(response: string) {
+  return new MockLanguageModelV2({
+    doGenerate: async () => ({
+      rawCall: { rawPrompt: null, rawSettings: {} },
+      finishReason: 'stop',
+      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      content: [{ type: 'text', text: response }],
+      warnings: [],
+    }),
+    doStream: async () => ({
+      stream: simulateReadableStream({
+        chunkDelayInMs: 0,
+        initialDelayInMs: 0,
+        chunks: [
+          { id: '1', type: 'text-start' },
+          { id: '1', type: 'text-delta', delta: response },
+          { id: '1', type: 'text-end' },
+          {
+            type: 'finish',
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          },
+        ],
+      }),
+      rawCall: { rawPrompt: null, rawSettings: {} },
+    }),
+  });
+}

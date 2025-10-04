@@ -103,8 +103,8 @@ export async function POST(request: Request) {
     // Validate and map the selected model
     const modelId = validateAndMapModel(selectedChatModel);
 
-    // Create dynamic agent with user-selected model
-    const dynamicAgent = createAssistantAgent(modelId);
+    // Create dynamic agent with user-selected model and mastra instance for telemetry
+    const dynamicAgent = createAssistantAgent(modelId, undefined);
 
     // Create a thread context for the conversation
     // Using the chat ID as the thread ID for consistency with existing UI

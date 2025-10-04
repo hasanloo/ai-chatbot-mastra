@@ -57,6 +57,20 @@
       "when": 1757615330396,
       "tag": "0007_new_terror",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1759475006616,
+      "tag": "0008_melodic_inhumans",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1759494482459,
+      "tag": "0009_curious_fixer",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { PostgresStore, PgVector } from '@mastra/pg';
-import { google } from '@ai-sdk/google';
+import { fastembed } from '@mastra/fastembed';
 import { weatherTool } from '../tools/weather-tool';
 import { myProvider } from '@/lib/ai/providers';
 
@@ -34,7 +34,7 @@ const ASSISTANT_INSTRUCTIONS = `
       - Ask clarifying questions when needed
       - Maintain a friendly and helpful tone
       - Admit when you don't know something rather than guessing
-      - Leverage conversation history to provide contextually aware responses
+      - Leverage conversation history and memory to provide contextually aware responses
 
       Use the weatherTool when users ask about weather conditions for specific locations.
 `;
@@ -54,35 +54,36 @@ const pgVector = new PgVector({
 const sharedMemory = new Memory({
   storage: postgresStore,
   vector: pgVector,
-  embedder: google.textEmbedding('text-embedding-004'),
+  embedder: fastembed,
   options: {
     lastMessages: 10, // Consider last 10 messages for context
     semanticRecall: {
-      topK: 3, // Retrieve top 3 most relevant messages
+      topK: 5, // Retrieve top 5 most relevant messages
       messageRange: 2, // Include 2 messages before/after each relevant match
+      scope: 'resource', // Semantic recall within the same resource
     },
     workingMemory: {
       enabled: true,
-      scope: 'resource',
+      version: 'vnext',
       template: `
 # User Profile
- 
+
 ## Personal Info
- 
+
 - Name:
 - Location:
 - Timezone:
- 
+
 ## Preferences
- 
+
 - Communication Style: [e.g., Formal, Casual]
 - Project Goal:
 - Key Deadlines:
   - [Deadline 1]: [Date]
   - [Deadline 2]: [Date]
- 
+
 ## Session State
- 
+
 - Last Task Discussed:
 - Open Questions:
   - [Question 1]
@@ -95,25 +96,38 @@ const sharedMemory = new Memory({
 // Singleton agents cache to avoid duplicate database connections
 const agentCache = new Map<string, Agent>();
 
-export function createAssistantAgent(modelId: string): Agent {
-  // Return cached agent if it already exists
-  if (agentCache.has(modelId)) {
+export function createAssistantAgent(
+  modelId: string,
+  customProvider?: any,
+): Agent {
+  // Create unique cache key based on provider presence
+  const cacheKey = customProvider ? `${modelId}_custom_${Date.now()}` : modelId;
+
+  // Return cached agent if it already exists (only for non-custom providers)
+  if (!customProvider && agentCache.has(cacheKey)) {
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    return agentCache.get(modelId)!;
+    return agentCache.get(cacheKey)!;
   }
+
+  // Use custom provider if provided, otherwise use default
+  const provider = customProvider || myProvider;
 
   // Create new agent and cache it
   const agent = new Agent({
     name: 'Assistant Agent',
     instructions: ASSISTANT_INSTRUCTIONS,
-    model: myProvider.languageModel(modelId),
+    model: provider.languageModel(modelId),
     tools: {
       weatherTool,
     },
     memory: sharedMemory, // Use singleton memory instance
   });
 
-  agentCache.set(modelId, agent);
+  // Only cache non-custom provider agents
+  if (!customProvider) {
+    agentCache.set(cacheKey, agent);
+  }
+
   return agent;
 }
 

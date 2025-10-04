@@ -4,7 +4,7 @@ import {
   wrapLanguageModel,
 } from 'ai';
 import { google } from '@ai-sdk/google';
-import { chatModel, reasoningModel, titleModel } from './models.test';
+import { chatModel, reasoningModel, titleModel, createEvalMockModel } from './models.test';
 import { isTestEnvironment } from '../constants';
 
 export const myProvider = isTestEnvironment
@@ -25,3 +25,15 @@ export const myProvider = isTestEnvironment
         'title-model': google('gemini-2.5-flash-lite'),
       },
     });
+
+/**
+ * Factory to create eval mock provider with specific response
+ * Used for LongMemEval evaluation to mock assistant responses during haystack replay
+ */
+export function createEvalMockProvider(response: string) {
+  return customProvider({
+    languageModels: {
+      'eval-mock-model': createEvalMockModel(response),
+    },
+  });
+}
