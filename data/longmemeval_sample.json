@@ -1,0 +1,89 @@
+[
+  {
+    "question_id": "sample_sq_001",
+    "question_type": "single-session-user",
+    "question": "What is the capital mentioned in the conversation?",
+    "answer": "Paris",
+    "question_date": "2024-01-01T10:00:00Z",
+    "haystack_session_ids": ["session_1"],
+    "haystack_dates": ["2024-01-01T09:00:00Z"],
+    "haystack_sessions": [
+      [
+        { "role": "user", "content": "The capital of France is Paris." },
+        { "role": "assistant", "content": "I understand. Paris is the capital of France." }
+      ]
+    ]
+  },
+  {
+    "question_id": "sample_ms_001",
+    "question_type": "multi-session",
+    "question": "What day was the meeting scheduled for?",
+    "answer": "Tuesday",
+    "question_date": "2024-01-02T15:00:00Z",
+    "haystack_session_ids": ["session_1", "session_2"],
+    "haystack_dates": ["2024-01-01T09:00:00Z", "2024-01-02T10:00:00Z"],
+    "haystack_sessions": [
+      [
+        { "role": "user", "content": "The meeting is scheduled for Tuesday at 2pm." },
+        { "role": "assistant", "content": "Got it, I've noted that the meeting is on Tuesday at 2pm." }
+      ],
+      [
+        { "role": "user", "content": "Can you remind me when the meeting is?" },
+        { "role": "assistant", "content": "The meeting is scheduled for Tuesday at 2pm." }
+      ]
+    ]
+  },
+  {
+    "question_id": "sample_tr_001",
+    "question_type": "temporal-reasoning",
+    "question": "What color did I mention yesterday?",
+    "answer": "blue",
+    "question_date": "2024-01-03T12:00:00Z",
+    "haystack_session_ids": ["session_1", "session_2"],
+    "haystack_dates": ["2024-01-02T09:00:00Z", "2024-01-03T09:00:00Z"],
+    "haystack_sessions": [
+      [
+        { "role": "user", "content": "My favorite color is blue." },
+        { "role": "assistant", "content": "Blue is a nice color!" }
+      ],
+      [
+        { "role": "user", "content": "Do you remember what we discussed yesterday?" },
+        { "role": "assistant", "content": "Yes, you mentioned that your favorite color is blue." }
+      ]
+    ]
+  },
+  {
+    "question_id": "sample_ku_001",
+    "question_type": "knowledge-update",
+    "question": "What is my current favorite food?",
+    "answer": "sushi",
+    "question_date": "2024-01-04T14:00:00Z",
+    "haystack_session_ids": ["session_1", "session_2"],
+    "haystack_dates": ["2024-01-03T09:00:00Z", "2024-01-04T09:00:00Z"],
+    "haystack_sessions": [
+      [
+        { "role": "user", "content": "I love pizza." },
+        { "role": "assistant", "content": "Pizza is great! It's one of the most popular foods." }
+      ],
+      [
+        { "role": "user", "content": "Actually, I've changed my mind. I prefer sushi now." },
+        { "role": "assistant", "content": "Sushi is delicious! It's a healthy choice." }
+      ]
+    ]
+  },
+  {
+    "question_id": "sample_abs_001",
+    "question_type": "abstention",
+    "question": "What is my phone number?",
+    "answer": "I don't know",
+    "question_date": "2024-01-05T11:00:00Z",
+    "haystack_session_ids": ["session_1"],
+    "haystack_dates": ["2024-01-05T10:00:00Z"],
+    "haystack_sessions": [
+      [
+        { "role": "user", "content": "My name is Alice and I work as a software engineer." },
+        { "role": "assistant", "content": "Nice to meet you, Alice! Software engineering is a great field." }
+      ]
+    ]
+  }
+]

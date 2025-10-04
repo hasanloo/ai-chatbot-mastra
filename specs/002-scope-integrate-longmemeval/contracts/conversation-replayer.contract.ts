@@ -24,7 +24,7 @@ export interface ConversationReplayer {
    */
   replayAndEvaluate(
     question: LongMemEvalQuestion,
-    config?: ReplayConfig
+    config?: ReplayConfig,
   ): Promise<EvaluationResult>;
 
   /**
@@ -36,10 +36,7 @@ export interface ConversationReplayer {
    * @returns Promise resolving when session replay completes
    * @throws ReplayError if any turn fails
    */
-  replaySession(
-    session: ConversationTurn[],
-    chatId: string
-  ): Promise<void>;
+  // replaySession(session: ConversationTurn[], chatId: string): Promise<void>;
 
   /**
    * Send a user message and get the real assistant response (no mocking).
@@ -49,16 +46,7 @@ export interface ConversationReplayer {
    * @returns Promise resolving to the assistant's response
    * @throws ReplayError if message fails or response generation errors
    */
-  sendRealMessage(message: string, chatId: string): Promise<string>;
-
-  /**
-   * Create a new Chat entity for an evaluation question.
-   *
-   * @param questionId - Unique question identifier (for chat title)
-   * @returns Promise resolving to the created Chat ID
-   * @throws ReplayError if chat creation fails
-   */
-  createEvaluationChat(questionId: string): Promise<string>;
+  // sendRealMessage(message: string, chatId: string): Promise<string>;
 }
 
 /**
@@ -135,61 +123,6 @@ export interface EvaluationResult {
 }
 
 /**
- * Chat service abstraction for dependency injection and mocking
- */
-export interface ChatService {
-  /**
-   * Generate an assistant response to a user message.
-   *
-   * @param message - User message content
-   * @param chatId - Chat entity ID for context
-   * @returns Promise resolving to assistant response
-   */
-  generateResponse(message: string, chatId: string): Promise<string>;
-}
-
-/**
- * Production chat service (uses real Mastra agent)
- */
-export interface ProductionChatService extends ChatService {
-  /**
-   * Generate response using the real Mastra assistant agent.
-   */
-  generateResponse(message: string, chatId: string): Promise<string>;
-}
-
-/**
- * Mocked chat service (uses provider-level mocking to return dataset responses)
- *
- * IMPORTANT: This service STILL calls Mastra's agent - it just uses a mocked LLM provider
- * underneath. This ensures Mastra's memory system works normally during haystack replay.
- *
- * Implementation uses MockLanguageModelV2 from AI SDK to mock only the LLM provider,
- * not the Mastra agent itself.
- */
-export interface MockedChatService extends ChatService {
-  /**
-   * Set the mock response for a specific turn index.
-   *
-   * @param turnIndex - Zero-based turn index
-   * @param response - Mocked assistant response
-   */
-  setMockResponse(turnIndex: number, response: string): void;
-
-  /**
-   * Generate mocked response by calling Mastra agent with mocked LLM provider.
-   * The provider returns the pre-defined dataset response for the current turn.
-   * Throws if no mock response is set for the current turn.
-   */
-  generateResponse(message: string, chatId: string): Promise<string>;
-
-  /**
-   * Reset the turn index counter (for starting a new conversation).
-   */
-  reset(): void;
-}
-
-/**
  * Error thrown during conversation replay
  */
 export class ReplayError extends Error {
@@ -197,7 +130,7 @@ export class ReplayError extends Error {
     message: string,
     public questionId: string,
     public stage: ReplayStage,
-    public cause?: Error
+    public cause?: Error,
   ) {
     super(`Replay error for ${questionId} at ${stage}: ${message}`);
     this.name = 'ReplayError';
@@ -217,7 +150,7 @@ export type ReplayStage =
  * Default replay configuration
  */
 export const DEFAULT_REPLAY_CONFIG: Required<ReplayConfig> = {
-  seed: undefined,
+  seed: 0, // Default to 0 for deterministic behavior if not specified
   verbose: false,
   messageTimeoutMs: 60000,
   continueOnError: true,

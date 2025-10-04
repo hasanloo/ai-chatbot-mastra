@@ -43,3 +43,9 @@ yarn-error.log*
 /playwright/*
 
 CLAUDE.md
+
+s-results-*.json
+
+data/longmemeval_m.json
+data/longmemeval_s.json
+data/longmemeval_oracle.json

@@ -1,13 +1,4 @@
-/**
- * Contract: Evaluation Runner
- *
- * Responsible for orchestrating the complete LongMemEval evaluation process:
- * loading the dataset, running evaluations for all questions, tracking progress,
- * and generating the final output JSON file.
- */
-
-import type { LongMemEvalQuestion } from './dataset-loader.contract';
-import type { EvaluationResult, ReplayConfig } from './conversation-replayer.contract';
+import type { ReplayConfig } from './conversation-replayer.contract';
 
 /**
  * Evaluation runner interface
@@ -41,6 +32,7 @@ export interface EvaluationRunner {
  * Evaluation run configuration
  */
 export interface EvaluationRunConfig {
+  subset: any;
   /** Path to the LongMemEval dataset JSON file */
   datasetPath: string;
 
@@ -205,7 +197,7 @@ export class EvaluationRunnerError extends Error {
   constructor(
     message: string,
     public stage: EvaluationStage,
-    public cause?: Error
+    public cause?: Error,
   ) {
     super(`Evaluation runner error at ${stage}: ${message}`);
     this.name = 'EvaluationRunnerError';
@@ -227,7 +219,7 @@ export type EvaluationStage =
 export const DEFAULT_EVALUATION_CONFIG: Partial<EvaluationRunConfig> = {
   outputDir: '.',
   replayConfig: {
-    verbose: false,
+    verbose: true,
     continueOnError: true,
   },
 } as const;

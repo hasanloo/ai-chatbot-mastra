@@ -47,7 +47,7 @@ Project uses **Web application (Next.js)** structure with:
 
 ## Phase 3.1: Setup
 
-### T001: Create evaluation directory structure
+### [X] T001: Create evaluation directory structure
 **Description**: Create new directories for LongMemEval integration
 **Files**:
 - `mkdir -p lib/eval`
@@ -61,7 +61,7 @@ Project uses **Web application (Next.js)** structure with:
 
 ---
 
-### T002: Add environment variables documentation
+### [X] T002: Add environment variables documentation
 **Description**: Document new environment variables in `.env.example`
 **File**: `.env.example`
 **Changes**:
@@ -77,7 +77,7 @@ LONGMEMEVAL_OUTPUT_DIR=./eval-results
 
 ---
 
-### T003: Create database schema migration for evaluation tables
+### [X] T003: Create database schema migration for evaluation tables
 **Description**: Add EvaluationRun and EvaluationResult tables to database schema
 **File**: `lib/db/schema.ts`
 **Changes**:
@@ -101,7 +101,7 @@ pnpm db:studio    # Should show new tables in UI
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
-### T004 [P]: Contract test for dataset loader
+### [X] T004 [P]: Contract test for dataset loader
 **Description**: Write contract tests for DatasetLoader interface
 **File**: `tests/contract/eval/dataset-loader.test.ts`
 **Tests**:
@@ -119,7 +119,7 @@ pnpm db:studio    # Should show new tables in UI
 
 ---
 
-### T005 [P]: Contract test for F1 scorer
+### [X] T005 [P]: Contract test for F1 scorer
 **Description**: Write contract tests for F1Scorer interface
 **File**: `tests/contract/eval/scoring.test.ts`
 **Tests**:
@@ -139,7 +139,7 @@ pnpm db:studio    # Should show new tables in UI
 
 ---
 
-### T006 [P]: Contract test for conversation replayer
+### [X] T006 [P]: Contract test for conversation replayer
 **Description**: Write contract tests for ConversationReplayer interface
 **File**: `tests/contract/eval/conversation-replayer.test.ts`
 **Tests**:
@@ -159,7 +159,7 @@ pnpm db:studio    # Should show new tables in UI
 
 ---
 
-### T007 [P]: Contract test for evaluation runner
+### [X] T007 [P]: Contract test for evaluation runner
 **Description**: Write contract tests for EvaluationRunner interface
 **File**: `tests/contract/eval/evaluation-runner.test.ts`
 **Tests**:
@@ -178,7 +178,7 @@ pnpm db:studio    # Should show new tables in UI
 
 ---
 
-### T008 [P]: Integration test for full evaluation workflow
+### [X] T008 [P]: Integration test for full evaluation workflow
 **Description**: Write integration test for complete evaluation run (end-to-end without UI)
 **File**: `tests/integration/eval/full-evaluation.test.ts`
 **Test Scenario** (from quickstart.md):
@@ -196,7 +196,7 @@ pnpm db:studio    # Should show new tables in UI
 
 ---
 
-### T009 [P]: Integration test for multi-session memory retention
+### [X] T009 [P]: Integration test for multi-session memory retention
 **Description**: Write integration test to verify memory is retained across session boundaries
 **File**: `tests/integration/eval/multi-session-memory.test.ts`
 **Test Scenario**:
@@ -213,7 +213,7 @@ pnpm db:studio    # Should show new tables in UI
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
-### T010 [P]: Implement F1 token overlap scorer
+### [X] T010 [P]: Implement F1 token overlap scorer
 **Description**: Implement F1Scorer interface with whitespace tokenization
 **File**: `lib/eval/scoring.ts`
 **Interface**: `F1Scorer` from contracts/scoring.contract.ts
@@ -250,7 +250,7 @@ pnpm test tests/contract/eval/scoring.test.ts
 
 ---
 
-### T011 [P]: Implement dataset loader
+### [X] T011 [P]: Implement dataset loader
 **Description**: Implement DatasetLoader interface for loading LongMemEval JSON files
 **File**: `lib/eval/dataset-loader.ts`
 **Interface**: `DatasetLoader` from contracts/dataset-loader.contract.ts
@@ -279,7 +279,7 @@ pnpm test tests/contract/eval/dataset-loader.test.ts
 
 ---
 
-### T012: Implement chat service abstraction layer with provider-level mocking
+### [X] T012: Implement chat service abstraction layer with provider-level mocking
 **Description**: Create ChatService interface with Production and Mocked implementations using provider-level mocking
 **File**: `lib/eval/chat-service.ts`
 **Interfaces**: `ChatService`, `ProductionChatService`, `MockedChatService` from conversation-replayer.contract.ts
@@ -413,7 +413,7 @@ pnpm test tests/contract/eval/chat-service.test.ts
 
 ---
 
-### T013: Implement conversation replayer
+### [X] T013: Implement conversation replayer
 **Description**: Implement ConversationReplayer interface for replaying conversations and evaluating questions
 **File**: `lib/eval/conversation-replayer.ts`
 **Interface**: `ConversationReplayer` from conversation-replayer.contract.ts
@@ -506,7 +506,7 @@ pnpm test tests/contract/eval/conversation-replayer.test.ts
 
 ---
 
-### T014: Implement evaluation runner
+### [X] T014: Implement evaluation runner
 **Description**: Implement EvaluationRunner interface to orchestrate complete dataset evaluation
 **File**: `lib/eval/evaluation-runner.ts`
 **Interface**: `EvaluationRunner` from evaluation-runner.contract.ts
@@ -559,7 +559,7 @@ pnpm test tests/contract/eval/evaluation-runner.test.ts
 
 ---
 
-### T015: Implement CLI script entry point
+### [X] T015: Implement CLI script entry point
 **Description**: Create CLI script to run LongMemEval evaluation from command line
 **File**: `scripts/eval-longmemeval.ts`
 **Interface**: CLI with options for dataset selection and subset testing
@@ -725,7 +725,7 @@ pnpm run eval:longmemeval --help
 
 ## Phase 3.4: Integration
 
-### T016: Add database queries for evaluation entities
+### [X] T016: Add database queries for evaluation entities
 **Description**: Create database query helpers for EvaluationRun and EvaluationResult
 **File**: `lib/db/queries.ts` (append to existing file)
 **Functions to add**:
@@ -743,7 +743,7 @@ export async function getEvaluationResultsByRunId(runId: string): Promise<Evalua
 
 ---
 
-### T017: Create or retrieve dedicated evaluation user
+### [X] T017: Create or retrieve dedicated evaluation user
 **Description**: Add helper function to get/create a dedicated evaluation user in database
 **File**: `lib/db/queries.ts` (append)
 **Function**:
@@ -790,7 +790,7 @@ export async function getOrCreateEvaluationUser(): Promise<User> {
 
 **Note**: Removed T018 (seed support) as Gemini 2.5 Flash/Pro models do not support deterministic seed parameter
 
-### T018 [P]: End-to-end Playwright test for full evaluation
+### [X] T018 [P]: End-to-end Playwright test for full evaluation
 **Description**: Write E2E test that runs complete evaluation via CLI script
 **File**: `tests/e2e/eval/full-evaluation.spec.ts`
 **Test Scenario** (from quickstart.md):
@@ -812,7 +812,7 @@ pnpm test tests/e2e/eval/full-evaluation.spec.ts
 
 ---
 
-### T019 [P]: Add performance test for F1 scoring
+### [X] T019 [P]: Add performance test for F1 scoring
 **Description**: Verify F1 scoring completes within performance target
 **File**: `tests/integration/eval/scoring-performance.test.ts`
 **Test**:
@@ -826,7 +826,7 @@ pnpm test tests/e2e/eval/full-evaluation.spec.ts
 
 ---
 
-### T020 [P]: Update CLAUDE.md with evaluation workflow
+### [X] T020 [P]: Update CLAUDE.md with evaluation workflow
 **Description**: Document how to run evaluations in CLAUDE.md
 **File**: `CLAUDE.md` (already updated by Phase 1, verify completeness)
 **Section to add** (if not present):
@@ -844,7 +844,7 @@ Run memory evaluation benchmarks:
 
 ---
 
-### T021 [P]: Create sample dataset for testing
+### [X] T021 [P]: Create sample dataset for testing
 **Description**: Create a small sample LongMemEval dataset for local testing
 **File**: `data/longmemeval_sample.json`
 **Content**: 5-10 hand-crafted questions covering different types:
@@ -860,7 +860,7 @@ Run memory evaluation benchmarks:
 
 ---
 
-### T022: Run full quickstart validation
+### [X] T022: Run full quickstart validation
 **Description**: Execute complete quickstart.md workflow to validate feature
 **Reference**: `specs/002-scope-integrate-longmemeval/quickstart.md`
 **Steps**:
