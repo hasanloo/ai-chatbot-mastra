@@ -12,12 +12,18 @@ import {
   type EvaluationRunConfig,
   type EvaluationRunResult,
   type EvaluationProgress,
+  type MetricBreakdown,
   EvaluationRunnerError,
   DEFAULT_EVALUATION_CONFIG,
   generateOutputFilename,
 } from '@/specs/002-scope-integrate-longmemeval/contracts/evaluation-runner.contract';
 import { createDatasetLoader } from './dataset-loader';
 import { createConversationReplayer } from './conversation-replayer';
+import {
+  categorizeQuestion,
+  getMetricName,
+  LongMemEvalMetric,
+} from './metric-categorizer';
 
 /**
  * Implementation of evaluation runner
@@ -62,6 +68,20 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
       const errors: any[] = [];
       const startedAt = new Date().toISOString();
 
+      // Initialize per-metric statistics
+      const metricsStats = new Map<
+        LongMemEvalMetric,
+        { total: number; completed: number; failed: number; correctSum: number }
+      >();
+      for (const metric of Object.values(LongMemEvalMetric)) {
+        metricsStats.set(metric, {
+          total: 0,
+          completed: 0,
+          failed: 0,
+          correctSum: 0,
+        });
+      }
+
       // 3. Create replayer
       const replayer = createConversationReplayer(effectiveConfig.replayConfig);
 
@@ -73,6 +93,13 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
         }
 
         const question = questionsToEvaluate[i];
+
+        // Categorize question into metric
+        const metric = categorizeQuestion(question);
+        const stats = metricsStats.get(metric);
+        if (stats) {
+          stats.total++;
+        }
 
         this.updateProgress({
           currentQuestion: {
@@ -94,12 +121,19 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
           results.push({
             question_id: result.questionId,
             question_type: result.questionType,
+            metric, // Add metric category
             question: result.question,
             answer: result.goldAnswer,
             model_answer: result.modelAnswer,
             score: result.score,
             reasoning: result.judgeResult?.reasoning,
           });
+
+          // Update metric statistics
+          if (stats) {
+            stats.completed++;
+            stats.correctSum += result.score;
+          }
 
           // Update progress
           this.updateProgress({
@@ -113,6 +147,11 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
             error_message: (error as Error).message || 'Unknown error',
             timestamp: new Date().toISOString(),
           });
+
+          // Update metric statistics
+          if (stats) {
+            stats.failed++;
+          }
 
           this.updateProgress({
             failedQuestions: this.progress.failedQuestions + 1,
@@ -139,6 +178,29 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
       // Compute final average score (accuracy)
       const averageScore = this.computeAverageScore(results);
 
+      // Compute per-metric breakdown
+      const metricsBreakdown: MetricBreakdown[] = Object.values(
+        LongMemEvalMetric,
+      ).map((metric) => {
+        const stats = metricsStats.get(metric) || {
+          total: 0,
+          completed: 0,
+          failed: 0,
+          correctSum: 0,
+        };
+        const accuracy =
+          stats.completed > 0 ? stats.correctSum / stats.completed : 0;
+
+        return {
+          metric,
+          metric_name: getMetricName(metric),
+          total_questions: stats.total,
+          completed_questions: stats.completed,
+          failed_questions: stats.failed,
+          accuracy,
+        };
+      });
+
       const outputData = {
         metadata: {
           dataset_name: datasetName,
@@ -148,6 +210,7 @@ export class LongMemEvalEvaluationRunner implements EvaluationRunner {
           failed_questions: errors.length,
           average_score: averageScore,
           accuracy: averageScore, // Binary score average = accuracy
+          metrics_breakdown: metricsBreakdown,
           seed: config.seed,
           started_at: startedAt,
           completed_at: completedAt,

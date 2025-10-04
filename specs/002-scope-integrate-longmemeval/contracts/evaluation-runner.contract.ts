@@ -94,6 +94,9 @@ export interface EvaluationMetadata {
   /** Accuracy (same as average_score for binary scoring) */
   accuracy: number;
 
+  /** Per-metric breakdown of results (5 core memory abilities) */
+  metrics_breakdown: MetricBreakdown[];
+
   /** Seed used for deterministic generation (if any) */
   seed?: number;
 
@@ -116,6 +119,9 @@ export interface EvaluationResultOutput {
 
   /** Question type/category */
   question_type: string;
+
+  /** LongMemEval metric category (IE, MR, KU, TR, ABS) */
+  metric: string;
 
   /** Evaluation question text */
   question: string;
@@ -186,6 +192,29 @@ export type EvaluationStatus =
   | 'cancelling'
   | 'completed'
   | 'failed';
+
+/**
+ * Per-metric breakdown statistics
+ */
+export interface MetricBreakdown {
+  /** Metric code (IE, MR, KU, TR, ABS) */
+  metric: string;
+
+  /** Metric full name */
+  metric_name: string;
+
+  /** Total questions for this metric */
+  total_questions: number;
+
+  /** Successfully evaluated questions for this metric */
+  completed_questions: number;
+
+  /** Failed evaluations for this metric */
+  failed_questions: number;
+
+  /** Accuracy for this metric (0-1) */
+  accuracy: number;
+}
 
 /**
  * Output file structure (written to JSON file)

@@ -38,6 +38,7 @@ describe('EvaluationRunner Contract Tests', () => {
     datasetPath: '/path/to/longmemeval_s.json',
     outputDir: './test-results',
     seed: 42,
+    subset: undefined,
   };
 
   beforeEach(() => {
@@ -58,6 +59,8 @@ describe('EvaluationRunner Contract Tests', () => {
           result.metadata.total_questions
         );
         expect(result.results.length).toBe(result.metadata.completed_questions);
+        expect(result.metadata.metrics_breakdown).toBeDefined();
+        expect(Array.isArray(result.metadata.metrics_breakdown)).toBe(true);
       }).rejects.toThrow('Not implemented');
     });
 
@@ -75,6 +78,7 @@ describe('EvaluationRunner Contract Tests', () => {
         expect(result.results.length).toBeGreaterThan(0);
         expect(result.results[0]).toHaveProperty('question_id');
         expect(result.results[0]).toHaveProperty('score');
+        expect(result.results[0]).toHaveProperty('metric');
       }).rejects.toThrow('Not implemented');
     });
 
@@ -187,6 +191,39 @@ describe('EvaluationRunner Contract Tests', () => {
 
     it('should have verbose disabled by default', () => {
       expect(DEFAULT_EVALUATION_CONFIG.replayConfig?.verbose).toBe(false);
+    });
+  });
+
+  describe('Metrics Breakdown', () => {
+    it('should include per-metric statistics in metadata', async () => {
+      await expect(async () => {
+        const result = await runner.run(mockConfig);
+
+        expect(result.metadata.metrics_breakdown).toBeDefined();
+        expect(result.metadata.metrics_breakdown.length).toBe(5); // 5 core metrics
+
+        for (const metric of result.metadata.metrics_breakdown) {
+          expect(metric).toHaveProperty('metric');
+          expect(metric).toHaveProperty('metric_name');
+          expect(metric).toHaveProperty('total_questions');
+          expect(metric).toHaveProperty('completed_questions');
+          expect(metric).toHaveProperty('failed_questions');
+          expect(metric).toHaveProperty('accuracy');
+          expect(metric.accuracy).toBeGreaterThanOrEqual(0);
+          expect(metric.accuracy).toBeLessThanOrEqual(1);
+        }
+      }).rejects.toThrow('Not implemented');
+    });
+
+    it('should categorize each result with a metric', async () => {
+      await expect(async () => {
+        const result = await runner.run(mockConfig);
+
+        for (const res of result.results) {
+          expect(res.metric).toBeDefined();
+          expect(['IE', 'MR', 'KU', 'TR', 'ABS']).toContain(res.metric);
+        }
+      }).rejects.toThrow('Not implemented');
     });
   });
 });

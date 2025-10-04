@@ -141,12 +141,22 @@ runner
     );
     console.log(`[LongMemEval] Failed: ${result.metadata.failed_questions}`);
     console.log(
-      `[LongMemEval] Accuracy: ${(result.metadata.accuracy * 100).toFixed(2)}%`,
+      `[LongMemEval] Overall Accuracy: ${(result.metadata.accuracy * 100).toFixed(2)}%`,
     );
     console.log(
       `[LongMemEval] Average Score: ${result.metadata.average_score.toFixed(4)}`,
     );
-    console.log(`[LongMemEval] Output written to: ${result.outputFilePath}`);
+
+    // Display per-metric breakdown
+    console.log('\n[LongMemEval] Metrics Breakdown:');
+    for (const metric of result.metadata.metrics_breakdown) {
+      const percentage = (metric.accuracy * 100).toFixed(1);
+      const count = `${metric.completed_questions}/${metric.total_questions}`;
+      const metricLabel = `${metric.metric} (${metric.metric_name})`;
+      console.log(`  ${metricLabel.padEnd(40)} ${percentage.padStart(5)}% (${count})`);
+    }
+
+    console.log(`\n[LongMemEval] Output written to: ${result.outputFilePath}`);
     process.exit(0);
   })
   .catch((error) => {
